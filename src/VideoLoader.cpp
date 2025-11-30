@@ -41,7 +41,7 @@ VideoLoader::VideoLoader(const std::string& filename) {
 
 VideoLoader::~VideoLoader() {
     close_writer(); // Ensure writer is closed
-    
+
     // Cleanup Decoder
     if (sws_ctx) sws_freeContext(sws_ctx);
     if (frame) av_frame_free(&frame);
@@ -103,18 +103,10 @@ void VideoLoader::init_writer(const std::string& out_filename, int width, int he
 
     out_stream = avformat_new_stream(out_fmt_ctx, nullptr);
     out_codec_ctx = avcodec_alloc_context3(encoder);
-    
-    // --- CORRECCIÓN CRÍTICA DE TIEMPO ---
-    // Convertimos double fps (ej. 30.0) a racional (30/1)
-    AVRational fps_rational = av_d2q(fps, 100000); // 100000 es la precisión máxima
-    
-    // El time_base del codec debe ser el inverso del framerate (ej. 1/30)
-    // Así, PTS = 1 significa "1 frame de duración"
+
+    AVRational fps_rational = av_d2q(fps, 100000);
     out_codec_ctx->time_base = av_inv_q(fps_rational);
-    
-    // Asignamos lo mismo al stream para evitar reescalados complejos
     out_stream->time_base = out_codec_ctx->time_base;
-    // ------------------------------------
 
     out_codec_ctx->width = width;
     out_codec_ctx->height = height;
@@ -162,7 +154,7 @@ void VideoLoader::init_writer(const std::string& out_filename, int width, int he
                                     width, height, AV_PIX_FMT_YUV420P,
                                     SWS_BILINEAR, nullptr, nullptr, nullptr);
 
-    m_pts_counter = 0; // Reiniciar contador
+    m_pts_counter = 0;
     m_writer_initialized = true;
     std::cout << "Writer initialized (Fixed Timebase): " << out_filename << std::endl;
 }
