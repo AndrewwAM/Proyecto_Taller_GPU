@@ -139,9 +139,9 @@ int main(int argc, char* argv[]) {
                        (height + block_size.y - 1) / block_size.y);
         
         // Dithering Configuration
-        // Correct step logic for N colors: 255 / (N - 1). 
-        const float palette_count = 2.0f; 
-        const float step = 255.0f / (palette_count - 1.0f); 
+        // Correct step logic for N colors: 255 / (N - 1).
+        const float palette_count = 4.0f;
+        const float step = 255.0f / (palette_count - 1.0f);
 
         std::cout << "Processing with GPU..." << std::endl;
 
