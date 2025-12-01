@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cuda_runtime.h>
 #include "VideoLoader.hpp"
-#include "ascii_patterns_10x10.cuh"
+#include "ascii_patterns_5x5.cuh"
 
 #define CUDA_CHECK(call) \
     do { \
@@ -13,8 +13,8 @@
         } \
     } while(0)
 
-#define BLOCK_SIZE PATTERN_SIZE_10X10
-#define ASCII_PALETTE_SIZE ASCII_PALETTE_SIZE_10X10
+#define BLOCK_SIZE PATTERN_SIZE_5X5
+#define ASCII_PALETTE_SIZE ASCII_PALETTE_SIZE_5X5
 
 __global__ void ascii_filter_kernel(uint8_t* buffer, int width, int height) {
     int block_x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -30,7 +30,6 @@ __global__ void ascii_filter_kernel(uint8_t* buffer, int width, int height) {
     int pixel_start_x = block_x * BLOCK_SIZE;
     int pixel_start_y = block_y * BLOCK_SIZE;
     
-    // Calcular luminosidad promedio del bloque usando acumuladores grandes
     int sum_luminance = 0;
     int pixel_count = 0;
     
@@ -52,16 +51,13 @@ __global__ void ascii_filter_kernel(uint8_t* buffer, int width, int height) {
         }
     }
     
-    // Evitar división por cero
     if (pixel_count == 0) return;
     
     int avg_luminance = sum_luminance / pixel_count;
     
-    // Seleccionar carácter ASCII basado en luminosidad
     int char_index = (avg_luminance * (ASCII_PALETTE_SIZE - 1)) / 255;
     char_index = min(char_index, ASCII_PALETTE_SIZE - 1);
     
-    // Aplicar patrón del carácter al bloque
     for (int dy = 0; dy < BLOCK_SIZE; dy++) {
         for (int dx = 0; dx < BLOCK_SIZE; dx++) {
             int px = pixel_start_x + dx;
@@ -71,15 +67,13 @@ __global__ void ascii_filter_kernel(uint8_t* buffer, int width, int height) {
                 int idx = (py * width + px) * 4;
                 int pattern_idx = dy * BLOCK_SIZE + dx;
                 
-                uint8_t pattern_value = d_patterns_10x10[char_index][pattern_idx];
+                uint8_t pattern_value = d_patterns_5x5[char_index][pattern_idx];
                 
                 if (pattern_value) {
-                    // Píxel activo - blanco
                     buffer[idx] = 255;
                     buffer[idx + 1] = 255;
                     buffer[idx + 2] = 255;
                 } else {
-                    // Píxel inactivo - negro
                     buffer[idx] = 0;
                     buffer[idx + 1] = 0;
                     buffer[idx + 2] = 0;
@@ -126,7 +120,7 @@ int main(int argc, char* argv[]) {
         int width = 0, height = 0;
         bool first_frame = true;
 
-        std::cout << "Applying ASCII filter (10x10) with GPU..." << std::endl;
+        std::cout << "Applying ASCII filter (5x5) with GPU..." << std::endl;
 
         while (loader.load_next_frame(&frame_data, &width, &height)) {
             
